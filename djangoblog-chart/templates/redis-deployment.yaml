@@ -10,7 +10,7 @@ metadata:
     io.kompose.service: redis
   name: redis
 spec:
-  replicas: 1
+  replicas: {{ .Values.redis.replicas }}
   selector:
     matchLabels:
       io.kompose.service: redis
@@ -22,9 +22,11 @@ spec:
       labels:
         io.kompose.service: redis
     spec:
+      imagePullSecrets:
+        - name: default   # replace it with your own imagePullSecrets
       containers:
-        - image: redis:6   # replace it with a specific tag
-          imagePullPolicy: IfNotPresent
+        - image: "{{.Values.redis.image.repository}}:{{.Values.redis.image.tag}}"  # replace it with a specific tag
+          imagePullPolicy: {{.Values.redis.image.pullPolicy}}
           name: redis
           ports:
             - containerPort: 6379
@@ -49,8 +51,9 @@ spec:
             periodSeconds: 10   # the check period
             failureThreshold: 5   # the maximum number of failures before the container is considered as failed
             successThreshold: 1
+   {{- if .Values.redis.redisExporter.enabled}} 
         - name: redis-exporter
-          image: bitnami/redis-exporter:1
+          image: "{{.Values.redis.redisExporter.image.repository}}:{{.Values.redis.redisExporter.image.tag}}"
           args:
             - --redis.addr=localhost:6379
           ports:
@@ -61,3 +64,5 @@ spec:
               cpu: 100m
               memory: 100Mi
       restartPolicy: Always
+   {{- end}}
+
